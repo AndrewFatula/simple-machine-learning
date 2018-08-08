@@ -6,5 +6,5 @@ I hode this repository will be helpful for those who started learning data scien
 
 
 ##############
-IN this repository you can find writted from scratch basic machine learinng algorithms.
+IN this repository you can find writted from scratch basic machine learning algorithms.
 ##############
