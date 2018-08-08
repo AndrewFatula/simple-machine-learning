@@ -3,7 +3,7 @@
 
 ### 
 
-Here you can find implementation of the classification decision tree algorithm from scratch using Python and additional libraries Pandas and Numpy.
+Here you can find implementation of the classification decision tree algorithm from scratch using Python and additional libraries such as Pandas and Numpy.
 
 Decision_tree_classifier.py - classification decision tree model, trained and tested on some data from the internet that contains 50000 values of 1 label and 13 features, 
 that data you can find here in data directory.
