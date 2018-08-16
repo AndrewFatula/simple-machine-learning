@@ -1,10 +1,10 @@
 # simple-machine-learning
 
 
-I hode this repository will be helpful for those who started learning data science and machine learning.
+I hope this repository will be helpful for those who started learning data science and machine learning.
 
 
 
 ##############
-IN this repository you can find writted from scratch basic machine learning algorithms.
+IN this repository you can find written from scratch basic machine learning algorithms.
 ##############
