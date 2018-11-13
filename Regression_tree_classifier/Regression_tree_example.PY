@@ -90,7 +90,7 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 	for variable in variables:
 		value_list = data[variable]
 		if len(np.unique(value_list))>n_quantiles:
-			# set the quantiles
+			#finding the quantiles of given features
 			probs = [j/float(n_quantiles) for j in range(1,n_quantiles+1)]
 			values = sc_st_mst.mquantiles(value_list,probs)
 

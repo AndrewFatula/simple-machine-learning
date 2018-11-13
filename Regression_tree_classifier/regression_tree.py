@@ -54,7 +54,7 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 	for variable in variables:
 		value_list = data[variable]
 		if len(np.unique(value_list))>n_quantiles:
-			#set the quantiles
+			#finding the quantiles of given feature
 			probs = [j/float(n_quantiles) for j in range(1,n_quantiles+1)]
 			values = sc_st_mst.mquantiles(value_list,probs)
 
@@ -97,7 +97,18 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 #Node class that saves all needed for as parameters of Decision tree
 class Node():
 	def __init__(self, parent, length, is_right):
-
+		#for each split must be defined :
+		#feature, where we found value for the best split
+		#value which we split on of that feature
+		#previous node, which is the parent node
+		#variance indicator of given data
+		#bool that gives as information if it is a leaf node
+		#heigth of that node (sequential number of given split that is saved of current node)
+		#if it is a leaf node, class value of that leaf node
+		#nodes for which current node is a parent node
+		#number of rows of training data that is produced by previous split
+		#the bool that gives information if current node is on the rigth branch of the previous split
+		#the bool that gives us information if given node is the root node
 		self.variable = None		
 		self.value = None
 		self.parent = parent
@@ -161,7 +172,7 @@ def compute_tree(data, variables, y_variable, max_height, min_samples_split = 1,
 	node.variance = parameters[2]
 
 		
-	#for each node dividing our data on twoo splitted parts
+	#dividing node data for the next use of get_split function by the given split parameters
 	data_for_right_branch = data[data[node.variable] <= node.value]
 	data_for_left_branch = data[data[node.variable] > node.value]
 	right = len(data_for_right_branch.index) 

@@ -104,8 +104,7 @@ def get_split(data, variables, class_variable, classes, p_initial, min_samples_l
 
 		if len(np.unique(value_list))>20:
 			
-			#finding 20 quantiles for dividing our data on given feature in its quantile
-
+			#finding 20 quantiles for dividing our data on given feature
 			probs = [j/20.0 for j in range(1,21)]
 			values = sc_st_mst.mquantiles(value_list,probs)
 
@@ -159,7 +158,7 @@ class Node():
 		#feature, where we found value for the best split
 		#value which we split on of that feature
 		#previous node, which is the parent node
-		#entropy indicator of gaven split 
+		#entropy indicator of given split 
 		#bool that gives as information if it is a leaf node
 		#heigth of that node (sequential number of given split that is saved of current node)
 		#if it is a leaf node, class value of that leaf node
@@ -254,7 +253,7 @@ def compute_tree(data, variables, class_variable, classes, p_initial, max_height
 			node.class_value = classes[1]
 		return node
 		
-	# splitting our training data with our split faeture and its value in order to build out tree
+	#dividing node data for the next use of get_split function by the given split parameters
 	data_for_right_branch = data[data[node.variable] <= node.value]
 	data_for_left_branch = data[data[node.variable] > node.value]
 	right = len(data_for_right_branch.index) 
