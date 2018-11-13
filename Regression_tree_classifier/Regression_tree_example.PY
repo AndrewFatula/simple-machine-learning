@@ -86,11 +86,11 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 	
 	variance = np.var(data[y_variable])
 	split_value = None
-
+	#for each feature in the given data
 	for variable in variables:
 		value_list = data[variable]
 		if len(np.unique(value_list))>n_quantiles:
-
+			# set the quantiles
 			probs = [j/float(n_quantiles) for j in range(1,n_quantiles+1)]
 			values = sc_st_mst.mquantiles(value_list,probs)
 
@@ -100,7 +100,7 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 			values = np.unique(value_list)	
 				
 		for value in values[:-1]:
-
+			#for each unique value of given feature
 			data_with_value = data[data[variable] <= value]
 			data_without_value =  data[data[variable] > value]
 			without_len = len(data_without_value.index)
@@ -203,7 +203,7 @@ def compute_tree(data, colnames, variables, y_variable, max_height, min_samples_
 	node.variable = parameters[0]
 	node.value = parameters[1]
 	node.variance = parameters[2]
-	#dividing nove data by the given split parameters
+	#dividing node data for the next use of get_split function by the given split parameters
 	data_for_right_branch = data[data[node.variable] <= node.value]
 	data_for_left_branch = data[data[node.variable] > node.value]
 	right = len(data_for_right_branch.index) 
