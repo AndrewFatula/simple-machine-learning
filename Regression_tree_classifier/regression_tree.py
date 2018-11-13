@@ -12,6 +12,8 @@ from sklearn.tree import DecisionTreeRegressor
 
 start = time.localtime(time.time())
 
+
+#Generates our test and training data with multivariate normal distribution
 random.seed(10)
 n = 4000
 x = [np.random.multivariate_normal([3.5*i-1,i,2.5*i,0.5*i,1.1*i+6,2.2*i-2],np.array([[1,0.5,0.3,0.4,0.3,0.5],
@@ -20,8 +22,8 @@ x = [np.random.multivariate_normal([3.5*i-1,i,2.5*i,0.5*i,1.1*i+6,2.2*i-2],np.ar
 														  		   					 [0.4,0.4,0.5,1,0.7,0.3],
 																   					 [0.3,0.5,0.3,0.7,1,0.2],
 														  		   					 [0.5,0.3,0.5,0.3,0.2,1]]),n) for i in range(1,6)]
-
 x = np.vstack(x).astype(np.float64)
+
 
 columns = ['col'+str(i) for i in range(1,7)]
 
@@ -32,6 +34,7 @@ variables = list(data.columns)
 variables.remove(y_variable)
 print variables
 
+#dividing our existed data on training and test parts
 def train_test_split(data, size):
 	data['split'] = np.random.rand(len(data.index))
 	train = data[data['split']>size]
@@ -42,16 +45,16 @@ def train_test_split(data, size):
 
 train, test = train_test_split(data, 0.1) 	
 
-
+#function that finds split for each node
 def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 	
 	variance = np.var(data[y_variable])
 	split_value = None
-
+	#for each feature
 	for variable in variables:
 		value_list = data[variable]
 		if len(np.unique(value_list))>n_quantiles:
-
+			#set the quantiles
 			probs = [j/float(n_quantiles) for j in range(1,n_quantiles+1)]
 			values = sc_st_mst.mquantiles(value_list,probs)
 
@@ -59,7 +62,7 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 			if len(np.unique(value_list))==1:
 				continue
 			values = np.unique(value_list)	
-				
+		#for each value of given feature		
 		for value in values[:-1]:
 
 			data_with_value = data[data[variable] <= value]
@@ -90,6 +93,8 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 	return  split_variable, split_value, variance
 
 ####
+
+#Node class that saves all needed for as parameters of Decision tree
 class Node():
 	def __init__(self, parent, length, is_right):
 
@@ -109,13 +114,13 @@ class Node():
 	
 		
 		
-		
+#Function that recursively builds the tree	
 def compute_tree(data, variables, y_variable, max_height, min_samples_split = 1, 
 				min_samples_leaf = 1, n_quantiles=10, parent=None, length = None, is_right = False):
 	
-	print '111'
+	
 	node = Node(parent, length, is_right)
-
+	#For each node it checks hyper parameters that were set
 	if node.parent == None:
 		node.root_node = True
 		node.height = 0
@@ -141,7 +146,7 @@ def compute_tree(data, variables, y_variable, max_height, min_samples_split = 1,
 		node.y_value = np.mean(data[y_variable])
 		return node
 		
-
+	#for each node it finds the best split and saves parameters of that split
 	parameters = get_split(data, variables, y_variable, min_samples_leaf, n_quantiles)
 	print parameters[2]
 	print len(data)
@@ -156,13 +161,15 @@ def compute_tree(data, variables, y_variable, max_height, min_samples_split = 1,
 	node.variance = parameters[2]
 
 		
-
+	#for each node dividing our data on twoo splitted parts
 	data_for_right_branch = data[data[node.variable] <= node.value]
 	data_for_left_branch = data[data[node.variable] > node.value]
 	right = len(data_for_right_branch.index) 
 	left = len(data_for_left_branch.index)
 		
 
+
+	#and for each splitted part repeat the procces
 	node.right_child = compute_tree(data_for_right_branch, variables, y_variable, max_height,
 										min_samples_split = min_samples_split, n_quantiles = n_quantiles, parent = node, length = right, is_right = True)	
 	node.left_child = compute_tree(data_for_left_branch, variables, y_variable, max_height,
@@ -179,6 +186,8 @@ tree = compute_tree(data, variables, y_variable, 10, min_samples_split = 1000, m
 sk_tree = DecisionTreeRegressor(max_depth = 10)
 sk_tree.fit(train[variables].values, train[y_variable].values)
 
+
+###Functions for evaluating the tree
 def mean_error(actual, predicted):
 	return sum(abs(actual-predicted)), np.mean(abs(actual-predicted))
 
@@ -190,9 +199,9 @@ def r_squared(actual, predicted):
 	res = sum((predicted - actual)**2)
 	tot = sum((actual - mean_y)**2)
 	return 1 - res/float(tot)	
+###
 
-
-
+#function that counts number of node of all branches of builded tree
 def count_nodes(node,i=0):
 	i+=1
 	if (node.is_leaf) :
@@ -200,13 +209,13 @@ def count_nodes(node,i=0):
 	return count_nodes(node.left_child,i) + count_nodes(node.right_child,i)
 
 
-
+#function that counts leaf nodes of all branches of builded tree
 def count_leaves(node):
 	if (node.is_leaf) :
 		return 1
 	return count_leaves(node.left_child) + count_leaves(node.right_child)
 		 	
-
+#function that for each row sets the score with our builded tree
 def score(row, node, variables):
 	if node.is_leaf:
 		return	node.y_value	
@@ -214,7 +223,7 @@ def score(row, node, variables):
 		return score(row,node.right_child, variables)
 	else:
 		return score(row,node.left_child, variables)
-	
+#function that makes predictions with our builded tree
 def predictions(data, node, variables, class_variable):
 	length = len(data.index)
 	

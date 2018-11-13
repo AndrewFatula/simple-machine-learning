@@ -10,7 +10,7 @@ import matplotlib.pyplot as plot
 import numpy.linalg as np_lin
 
 
-
+#Generating our test and thaining sets with the multivariate_normal distribution
 random.seed(10)
 n = 5000
 x1 = np.random.multivariate_normal([0,1.2,1],[[0.9,0.6,0.5],[0.6,0.9,0.75],[0.5,0.75,0.9]],n)
@@ -25,14 +25,18 @@ plot.show()
 
 start = time.localtime(time.time())
 
+#sigmoid function
 def sigmoid(scores):
 	return 1 / (1 + np.exp(-scores))
 
+#compute liglikehood for given data
 def log_likehood(x,y,weights):
 	scores = np.dot(x,weights)
 	log_lhood = np.sum(y*scores - np.log(1+np.exp(scores)))
 	return log_lhood 
 
+
+#classify the given predictions(which are the probabilities of the positive class of specific row)
 def predict(predictions):
 	pred = []
 	for y in predictions:
@@ -43,9 +47,7 @@ def predict(predictions):
 
 	return np.array(pred)	
 
-def sigmoid(scores):
-	return 1 / (1 + np.exp(-scores))
-
+#function that computes the weigths for the logistic_regression method of classification
 def logistic_regression(x, y, n, alpha):
 	weights = np.zeros(x.shape[1])
 	

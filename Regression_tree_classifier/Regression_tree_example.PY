@@ -15,6 +15,7 @@ import datetime
 start = time.localtime(time.time())
 
 os.chdir('data')
+#Data of air quality
 data = pd.read_excel('AirQualityUCI.xlsx', na_values = '?')
 print len(data.index)
 temp = 'T'
@@ -27,13 +28,13 @@ colnames.remove(temp)
 
 
 
-
-
+#compute correlation beeween a nd b
 def correlation(a,b):
 	sum_ab = sum(a*b)
 	m_ab = sum_ab/float(len(a))
 	return (m_ab - np.mean(a)*np.mean(b))/float(np.std(a)*np.std(b))
 
+#converts all not numeric features to numeric
 def Date_converter(data):
 	time = []
 	for t in data['Time']:
@@ -60,7 +61,7 @@ def Date_converter(data):
 timecol = Date_converter(data) 
 			
 	
-###
+#split the data on training and test set
 def train_test_split(data, size):
 	data['split'] = np.random.rand(len(data.index))
 	train =  data[data['split']>size]
@@ -70,17 +71,17 @@ def train_test_split(data, size):
 	test = test.drop('split',1)
 	return train, test
 
-
+#computes mean error of predictions
 def mean_error(actual, predicted):
 	return sum(abs(actual-predicted)), np.mean(abs(actual-predicted))
-
+#computes R_squared of predictions
 def r_squared(actual, predicted):
 	mean_y = np.mean(actual)
 	res = sum((predicted - actual)**2)
 	tot = sum((actual - mean_y)**2)
 	return 1 - res/float(tot)	
 
-
+#finds the best split of given data
 def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 	
 	variance = np.var(data[y_variable])
@@ -130,7 +131,19 @@ def get_split(data, variables, y_variable, min_samples_leaf, n_quantiles):
 ####
 class Node():
 	def __init__(self, parent, length, is_right):
-
+		
+		#for each split must be defined :
+		#feature, where we found value for the best split
+		#value which we split on of that feature
+		#previous node, which is the parent node
+		#variance indicator of given data
+		#bool that gives as information if it is a leaf node
+		#heigth of that node (sequential number of given split that is saved of current node)
+		#if it is a leaf node, class value of that leaf node
+		#nodes for which current node is a parent node
+		#number of rows of training data that is produced by previous split
+		#the bool that gives information if current node is on the rigth branch of the previous split
+		#the bool that gives us information if given node is the root node
 		self.variable = None		
 		self.value = None
 		self.parent = parent
@@ -147,12 +160,12 @@ class Node():
 	
 		
 		
-		
+#Function that builds the tree recutrsively
 def compute_tree(data, colnames, variables, y_variable, max_height, min_samples_split = 1, 
 				min_samples_leaf = 1, n_quantiles=10, parent=None, length = None, is_right = False):
-	
+	#for each node of the tree
 	node = Node(parent, length, is_right)
-
+	#check if node has reached hyper_parameters, that were set when the funcion was called
 	if node.parent == None:
 		node.root_node = True
 		node.height = 0
@@ -160,6 +173,7 @@ def compute_tree(data, colnames, variables, y_variable, max_height, min_samples_
 	else:
 		node.height = node.parent.height + 1
 	
+	#if node is reaching the hyper_parameters: for the data splitted by previous node is using linear_regression model from the sklearn framework
 	if (node.length != None) and (node.length < min_samples_split):
 		node.is_leaf = True
 		node.model = LinearRegression()
@@ -177,7 +191,7 @@ def compute_tree(data, colnames, variables, y_variable, max_height, min_samples_
 		node.model = LinearRegression()
 		node.model.fit(np.array(data[colnames]), np.array(data[temp]))
 		return node
-		
+	#finding the split and saving the split parameters
 	parameters = get_split(data, variables, y_variable, min_samples_leaf, n_quantiles)
 
 	if parameters == None:
@@ -189,22 +203,20 @@ def compute_tree(data, colnames, variables, y_variable, max_height, min_samples_
 	node.variable = parameters[0]
 	node.value = parameters[1]
 	node.variance = parameters[2]
-
+	#dividing nove data by the given split parameters
 	data_for_right_branch = data[data[node.variable] <= node.value]
 	data_for_left_branch = data[data[node.variable] > node.value]
 	right = len(data_for_right_branch.index) 
 	left = len(data_for_left_branch.index)
-		
+	#repeating the procces recursively for each splitted part 
 	node.right_child = compute_tree(data_for_right_branch, colnames, variables, y_variable, max_height,
 										min_samples_split = min_samples_split, min_samples_leaf = min_samples_leaf, n_quantiles = n_quantiles, parent = node, length = right, is_right = True)	
 	node.left_child = compute_tree(data_for_left_branch, colnames,variables, y_variable, max_height,
 										min_samples_split = min_samples_split, min_samples_leaf = min_samples_leaf, n_quantiles = n_quantiles, parent = node, length = left)
-	
-
 
 	return node	
 
-
+#for each row of test data compute the score with the builded decision tree
 def score(row, node, variables):
 	if node.is_leaf:
 		return	node.model.predict(np.array(row[variables]).reshape(1, -1)).item(0)	
@@ -212,11 +224,15 @@ def score(row, node, variables):
 		return score(row,node.right_child, variables)
 	else:
 		return score(row,node.left_child, variables)
-	
+
+
+#making predictions for test data	
 def predictions(data, node, variables):
 	length = len(data.index)
 	return [score(data.iloc[i], node, variables) for i in range(length)]		
 
+
+#function that finds the best hyper_parameters of the decision tree for the given data
 def cross_validation(data, timecol, colnames, temp, ratio,):
 	best_nodes, best_n_samples = None, None
 	best_result = len(data) 
@@ -240,15 +256,10 @@ def cross_validation(data, timecol, colnames, temp, ratio,):
 
 
 			 
-'''
-linear_model = LinearRegression()
-linear_model.fit(train[np.hstack((colnames,timecol))],train[temp])
-predicted2 = linear_model.predict(test[np.hstack((colnames,timecol))])
-'''
 
 
 
-
+#counts the number of  nodes on all branches of the tree
 def count_nodes(node,i=0):
 	i+=1
 	if (node.is_leaf) :
@@ -256,7 +267,7 @@ def count_nodes(node,i=0):
 	return count_nodes(node.left_child,i) + count_nodes(node.right_child,i)
 
 
-
+#counts the number of leaf nodes on all branches of the tree
 def count_leaves(node):
 	if (node.is_leaf) :
 		return 1

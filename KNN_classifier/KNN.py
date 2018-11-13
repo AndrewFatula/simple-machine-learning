@@ -14,6 +14,9 @@ from sklearn import datasets
 
 start = time.localtime(time.time())
 
+
+
+### Testing the simplest KNN algorithm on the handwritted digits 8X8 imagines from sklearn framework
 new_digits = datasets.load_digits()
 
 
@@ -29,6 +32,8 @@ train_labels = np.array(new_digits['target'])[train_indices]
 test_images = new_digits['images'][test_indices]
 test_labels = np.array(new_digits['target'])[test_indices]
 
+
+#converts the image to convenient form
 def image_converter(images):
 	return np.array([np.ravel(image) for image in images])
 
@@ -48,6 +53,7 @@ class KNN_classifier:
 		self.features = x
 		self.classes = np.unique(self.labels)
 
+	#finds the closest neihbors for the given row from the training set
 	def predict(self, test_x):
 
 		if len(np.shape(test_x))==1:
@@ -63,7 +69,7 @@ class KNN_classifier:
 			return label
 
 		else:	
-			print('ERROR.predictions should be made iteratively')
+			print('ERROR.predictions must to be made iteratively')
 		
 		
 
