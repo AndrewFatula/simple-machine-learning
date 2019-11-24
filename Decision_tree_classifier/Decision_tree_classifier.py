@@ -36,17 +36,16 @@ class my_data():
  		
  		#saves all features names
 		self.variables = copy.copy(variables)
-		self.variables.remove(variables[-1])
 		#saves label name
-		self.class_variable = variables[-1]
+
 		#saves all unique label classes
 		classes = np.unique(data.all_examples[data.class_variable])
 		self.classes = list(classes[0:3])
 		#separates data with defined and undefined labels
-		self.defined = data.all_examples[data.all_examples[data.class_variable].notna()]
-		self.undefined = data.all_examples[data.all_examples[data.class_variable].isna()]
+		self.defined = data.all_examples[data.all_examples[data.variables[-1].notna()]
+		self.undefined = data.all_examples[data.all_examples[data.variables[-1].isna()]
 		#saves initial ration of twoo classes in label
-		self.p_initial = (len(self.all_examples[self.all_examples[self.class_variable]==self.classes[0]].index)/
+		self.p_initial = (len(self.all_examples[self.all_examples[self.variables[-1]]==self.classes[0]].index)/
 			float(len(self.all_examples.index)))
 
 	#Method that for each N/A value in features puts in compliance the possibility of positive label if value of selected feature
@@ -54,7 +53,7 @@ class my_data():
 	def fill_missing_values(self):
 		for variable in self.variables:
 			if 	len(self.defined[self.defined[variable].isna()].index) > 0:
-				p_na = (len(self.defined[(self.defined[variable].isna()) & (self.defined[self.class_variable]==self.classes[1])].index)/
+				p_na = (len(self.defined[(self.defined[variable].isna()) & (self.defined[self.variables[-1]]==self.classes[1])].index)/
 					float(len(self.defined[self.defined[variable].isna()].index)))
 				self.defined[variable] = self.defined[variable].fillna(p_na*np.mean(self.defined[variable]))		
 
@@ -64,8 +63,8 @@ class my_data():
 		self.defined['split'] = np.random.rand(len(self.defined.index))
 		self.defined_train = self.defined[self.defined['split']>size]
 		self.defined_test = self.defined[self.defined['split']<=size]
-		self.defined_train = self.defined_train.drop('split',1)
-		self.defined_test = self.defined_test.drop('split',1)
+		self.defined_train = self.defined_train.drop('split',1).values
+		self.defined_test = self.defined_test.drop('split',1).values
 
 
 data = my_data()
@@ -90,7 +89,7 @@ def get_entropy(p, p_initial):
 #Method that makes a split for eack node in Decision tree
 #it returns split feature, split value of that feature, entropy indicator of found split and ratios of classes in label of each splitted part of the data
 
-def get_split(data, variables, class_variable, classes, p_initial, min_samples_leaf):
+def get_split(data, variables, classes, p_initial, min_samples_leaf):
 
 	entropy = 1
 	split_variable = None
@@ -99,8 +98,9 @@ def get_split(data, variables, class_variable, classes, p_initial, min_samples_l
 	ones_l = None
 
 	#for each feature in dataset
-	for variable in variables:
-		value_list = data[variable]
+	for variable in variables[:-1]:
+		var_indx = variables.index(variable)				   
+		value_list = data[:,var_indx]
 
 		if len(np.unique(value_list))>20:
 			
@@ -117,18 +117,18 @@ def get_split(data, variables, class_variable, classes, p_initial, min_samples_l
 		#for each quantile of the given feature
 		for value in values[:-1]:
 
-			data_with_value = data[data[variable] <= value]
-			data_without_value =  data[data[variable] > value]
-			without_len = len(data_without_value.index)
-			with_len = len(data_with_value.index)
+			data_with_value = data[data[:,var_indx] <= value]
+			data_without_value =  data[data[:,var_indx] > value]
+			without_len = np.shape(data_without_value)[0]
+			with_len = np.shape(data_with_value)[0]
 			if (with_len < min_samples_leaf) or (without_len < min_samples_leaf):
 				continue	
 	
 			### Ratios of each value of specified variable
 			p_value = with_len/float(len(data.index))
 
-			ones_with = len(data_with_value[data_with_value[class_variable]==classes[0]].index)
-			ones_without = len(data_without_value[data_without_value[class_variable]==classes[0]].index)
+			ones_with = np.shape(data_with_value[data_with_value[:,variables[-1]]==classes[0]])[0]
+			ones_without = np.shape(data_without_value[data_without_value[:,variables[-1]]==classes[0]])[0]
 
 			p_with = ones_with/float(with_len)
 			p_without = ones_without/float(without_len)
@@ -140,7 +140,7 @@ def get_split(data, variables, class_variable, classes, p_initial, min_samples_l
 				p_right = p_with
 				p_left = p_without
 				entropy = split_entropy
-				split_variable = variable
+				split_variable_idx = variables.index(variable)
 				split_value = value
 
 	if split_variable == None:
@@ -165,7 +165,7 @@ class Node():
 		#nodes for which current node is a parent node
 		#number of rows of training data that is produced by previous split
 		#the bool that gives information if current node is on the rigth branch of the previous split
-		self.variable = None
+		self.variable_idx = None
 		self.value = None
 		self.parent = parent
 		self.entropy = None
@@ -181,7 +181,7 @@ class Node():
 		
 		
 # function that recursively builds the decision tree, which is called for each node of our tree		
-def compute_tree(data, variables, class_variable, classes, p_initial, max_height,
+def compute_tree(data, variables, classes, p_initial, max_height,
 				 min_samples_split = 1, min_samples_leaf = 1, parent=None, length = None,
 				  p_current = None, is_right = False):
 	#defining node for which we want to find the best split or to make it a leaf node
@@ -227,7 +227,7 @@ def compute_tree(data, variables, class_variable, classes, p_initial, max_height
 		return node
 		
 	#for each node we need to fing and save parameters of its split
-	parameters = get_split(data, variables, class_variable, classes, p_initial, min_samples_leaf)
+	parameters = get_split(data, variables, classes, p_initial, min_samples_leaf)
 
 	if parameters == None:
 		node.is_leaf= True
@@ -237,7 +237,7 @@ def compute_tree(data, variables, class_variable, classes, p_initial, max_height
 			node.class_value = classes[1]
 		return node
 
-	node.variable = parameters[0]
+	node.variable_idx = parameters[0]
 	node.value = parameters[1]
 	node.entropy = parameters[2]
 
@@ -254,15 +254,15 @@ def compute_tree(data, variables, class_variable, classes, p_initial, max_height
 		return node
 		
 	#dividing node data for the next use of get_split function by the given split parameters
-	data_for_right_branch = data[data[node.variable] <= node.value]
-	data_for_left_branch = data[data[node.variable] > node.value]
-	right = len(data_for_right_branch.index) 
-	left = len(data_for_left_branch.index)
+	data_for_right_branch = data[data[:,node.variable_idx] <= node.value]
+	data_for_left_branch = data[data[:,node.variable_idx] > node.value]
+	right = np.shape(data_for_right_branch)[0] 
+	left = np.shape(data_for_left_branch)[0]
 		
 	#for each part of our splitted data we use our computing tree function recursively
-	node.right_child = compute_tree(data_for_right_branch, variables, class_variable, classes, p_initial, max_height,
+	node.right_child = compute_tree(data_for_right_branch, variables, classes, p_initial, max_height,
 										min_samples_split = min_samples_split, parent = node, length = right, p_current = parameters[3], is_right = True)	
-	node.left_child = compute_tree(data_for_left_branch, variables, class_variable, classes, p_initial, max_height,
+	node.left_child = compute_tree(data_for_left_branch, variables, classes, p_initial, max_height,
 										min_samples_split = min_samples_split, parent = node, length = left, p_current = parameters[4])
 	
 
@@ -273,7 +273,7 @@ def compute_tree(data, variables, class_variable, classes, p_initial, max_height
 
 
 
-tree = compute_tree(data.defined_train, data.variables, data.class_variable, data.classes, data.p_initial, 20, min_samples_split = 100)
+tree = compute_tree(data.defined_train, data.variables, data.classes, data.p_initial, 20, min_samples_split = 100)
 
 
 #function for counting how much node our tree has on all of its branches
