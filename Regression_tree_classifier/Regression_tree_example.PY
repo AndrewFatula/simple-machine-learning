@@ -286,20 +286,8 @@ end = time.localtime(time.time())
 
 start_in_sec = start[3]*3600 + start[4]*60 + start[5]
 end_in_sec = end[3]*3600 + end[4]*60 + end[5]
-
-
-all_time_min = int((end_in_sec-start_in_sec)/60)
-all_time_sec = (end_in_sec-start_in_sec)%60
-if all_time_min < 10:
-	if all_time_sec < 10:
-		print('0%s:0%s' % (all_time_min, all_time_sec ))
-	else:
-		print('0%s:%s' % (all_time_min, all_time_sec ))	
-else:
-	if all_time_sec < 10:
-		print('%s:0%s' % (all_time_min, all_time_sec ))
-	else:
-		print('%s:%s' % (all_time_min, all_time_sec ))	
+all_time_in_sec = end_in_sec - start_in_sec
+print(all_time_in_sec)
 
 
 
